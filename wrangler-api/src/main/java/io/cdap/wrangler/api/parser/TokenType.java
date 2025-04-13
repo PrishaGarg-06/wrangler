@@ -18,7 +18,11 @@ package io.cdap.wrangler.api.parser;
 
 import io.cdap.wrangler.api.annotations.PublicEvolving;
 
+import java.beans.Expression;
 import java.io.Serializable;
+import java.util.Properties;
+
+import org.w3c.dom.Text;
 
 /**
  * The TokenType class provides the enumerated types for different types of
@@ -152,5 +156,9 @@ public enum TokenType implements Serializable {
    * Represents the enumerated type for the object of type {@code String} with restrictions
    * on characters that can be present in a string.
    */
-  IDENTIFIER
+  IDENTIFIER,
+
+  BYTE_SIZE,
+  TIME_DURATION,
 }
+

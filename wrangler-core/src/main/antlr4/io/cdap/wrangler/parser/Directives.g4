@@ -1,19 +1,3 @@
-/*
- * Copyright © 2017-2019 Cask Data, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
-
 grammar Directives;
 
 options {
@@ -22,19 +6,8 @@ options {
 
 @lexer::header {
 /*
- * Copyright © 2017-2019 Cask Data, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
+ * Licensed under the Apache License, Version 2.0
  * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
  */
 }
 
@@ -46,12 +19,13 @@ recipe
  ;
 
 statements
- :  ( Comment | macro | directive ';' | pragma ';' | ifStatement)*
+ :  ( Comment | macro | directive SCOLON | pragma SCOLON | ifStatement)* 
  ;
 
 directive
  : command
-  (   codeblock
+  ( aggregateStats
+    | codeblock
     | identifier
     | macro
     | text
@@ -64,31 +38,24 @@ directive
     | stringList
     | numberRanges
     | properties
+    | byteSizeArg
+    | timeDurationArg
   )*?
   ;
 
 ifStatement
-  : ifStat elseIfStat* elseStat? '}'
-  ;
-
-ifStat
-  : 'if' expression '{' statements
-  ;
-
-elseIfStat
-  : '}' 'else' 'if' expression '{' statements
-  ;
-
-elseStat
-  : '}' 'else' '{' statements
+  : IF expression OBrace statements
+    (ELSE IF expression OBrace statements)* 
+    (ELSE OBrace statements)? 
+    CBrace
   ;
 
 expression
-  : '(' (~'(' | expression)* ')'
+  : OParen (~OParen | expression)* CParen
   ;
 
 forStatement
- : 'for' '(' Identifier '=' expression ';' expression ';' expression ')' '{'  statements '}'
+ : FOR OParen Identifier Assign expression SCOLON expression SCOLON expression CParen OBrace statements CBrace
  ;
 
 macro
@@ -96,19 +63,19 @@ macro
  ;
 
 pragma
- : '#pragma' (pragmaLoadDirective | pragmaVersion)
+ : PRAGMA (pragmaLoadDirective | pragmaVersion)
  ;
 
 pragmaLoadDirective
- : 'load-directives' identifierList
+ : LOAD_DIRECTIVES identifierList
  ;
 
 pragmaVersion
- : 'version' Number
+ : VERSION Number
  ;
 
 codeblock
- : 'exp' Space* ':' condition
+ : EXP Space* Colon condition
  ;
 
 identifier
@@ -116,35 +83,35 @@ identifier
  ;
 
 properties
- : 'prop' ':' OBrace (propertyList)+  CBrace
- | 'prop' ':' OBrace OBrace (propertyList)+ CBrace { notifyErrorListeners("Too many start paranthesis"); }
- | 'prop' ':' OBrace (propertyList)+ CBrace CBrace { notifyErrorListeners("Too many start paranthesis"); }
- | 'prop' ':' (propertyList)+ CBrace { notifyErrorListeners("Missing opening brace"); }
- | 'prop' ':' OBrace (propertyList)+  { notifyErrorListeners("Missing closing brace"); }
+ : PROP Colon OBrace (propertyList)+  CBrace
+ | PROP Colon OBrace OBrace (propertyList)+ CBrace { notifyErrorListeners("Too many start paranthesis"); }
+ | PROP Colon OBrace (propertyList)+ CBrace CBrace { notifyErrorListeners("Too many start paranthesis"); }
+ | PROP Colon (propertyList)+ CBrace { notifyErrorListeners("Missing opening brace"); }
+ | PROP Colon OBrace (propertyList)+  { notifyErrorListeners("Missing closing brace"); }
  ;
 
 propertyList
- : property (',' property)*
+ : property (Comma property)*
  ;
 
 property
- : Identifier '=' ( text | number | bool )
+ : Identifier Assign ( text | number | bool )
  ;
 
 numberRanges
- : numberRange ( ',' numberRange)*
+ : numberRange ( Comma numberRange)*
  ;
 
 numberRange
- : Number ':' Number '=' value
+ : Number Colon Number Assign value
  ;
 
 value
- : String | Number | Column | Bool
+ : String | Number | Column | Bool | BYTE_SIZE | TIME_DURATION
  ;
 
 ecommand
- : '!' Identifier
+ : External Identifier
  ;
 
 config
@@ -176,32 +143,43 @@ command
  ;
 
 colList
- : Column (','  Column)+
+ : Column (Comma Column)+
  ;
 
 numberList
- : Number (',' Number)+
+ : Number (Comma Number)+
  ;
 
 boolList
- : Bool (',' Bool)+
+ : Bool (Comma Bool)+
  ;
 
 stringList
- : String (',' String)+
+ : String (Comma String)+
  ;
 
 identifierList
- : Identifier (',' Identifier)*
+ : Identifier (Comma Identifier)*
  ;
 
+byteSizeArg
+ : BYTE_SIZE
+ ;
+
+timeDurationArg
+ : TIME_DURATION
+ ;
+
+aggregateStats
+ : 'aggregate-stats' ( identifier | number | String )* // Corrected 'string' to 'String'
+ ;
 
 /*
  * Following are the Lexer Rules used for tokenizing the recipe.
  */
 OBrace   : '{';
 CBrace   : '}';
-SColon   : ';';
+SCOLON   : ';';
 Or       : '||';
 And      : '&&';
 Equals   : '==';
@@ -247,31 +225,53 @@ BackSlash: '\\';
 Dollar   : '$';
 Tilde    : '~';
 
-
 Bool
  : 'true'
  | 'false'
  ;
 
 Number
- : Int ('.' Digit*)?
+ : Int (Dot Digit*)?
  ;
 
 Identifier
- : [a-zA-Z_\-] [a-zA-Z_0-9\-]*
+ : [a-zA-Z_\-] [a-zA-Z_0-9\-]* 
  ;
 
 Macro
- : [a-zA-Z_] [a-zA-Z_0-9]*
+ : [a-zA-Z_] [a-zA-Z_0-9]* 
  ;
 
 Column
- : ':' [a-zA-Z_\-] [:a-zA-Z_0-9\-]*
+ : ':' [a-zA-Z_\-] [:a-zA-Z_0-9\-]* 
  ;
 
 String
  : '\'' ( EscapeSequence | ~('\'') )* '\''
  | '"'  ( EscapeSequence | ~('"') )* '"'
+ ;
+
+BYTE_SIZE
+ : Digit+ (Dot Digit+)? BYTE_UNIT
+ ;
+
+TIME_DURATION
+ : Digit+ (Dot Digit+)? TIME_UNIT
+ ;
+
+fragment BYTE_UNIT
+ : [kK][bB]
+ | [mM][bB]
+ | [gG][bB]
+ | [bB]
+ ;
+
+fragment TIME_UNIT
+ : 'ms'
+ | 's'
+ | 'sec'
+ | 'm'
+ | 'min'
  ;
 
 EscapeSequence
@@ -292,16 +292,7 @@ UnicodeEscape
    :   '\\' 'u' HexDigit HexDigit HexDigit HexDigit
    ;
 
-fragment
-   HexDigit : ('0'..'9'|'a'..'f'|'A'..'F') ;
-
-Comment
- : ('//' ~[\r\n]* | '/*' .*? '*/' | '--' ~[\r\n]* ) -> skip
- ;
-
-Space
- : [ \t\r\n\u000C]+ -> skip
- ;
+fragment HexDigit : ('0'..'9'|'a'..'f'|'A'..'F') ;
 
 fragment Int
  : '-'? [1-9] Digit* [L]*
@@ -311,3 +302,21 @@ fragment Int
 fragment Digit
  : [0-9]
  ;
+
+Comment
+ : ('//' ~[\r\n]* | '/*' .*? '*/' | '--' ~[\r\n]* ) -> skip
+ ;
+
+Space
+ : [ \t\r\n\u000C]+ -> skip
+ ;
+
+/* Keywords as tokens */
+IF : 'if';
+ELSE : 'else';
+FOR : 'for';
+EXP : 'exp';
+VERSION : 'version';
+PRAGMA : '#pragma';
+LOAD_DIRECTIVES : 'load-directives';
+PROP : 'prop';

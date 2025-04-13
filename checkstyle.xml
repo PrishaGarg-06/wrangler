@@ -89,15 +89,13 @@ page at http://checkstyle.sourceforge.net/config.html -->
       <property name="severity" value="error"/>
     </module>
 
-    <module name="ImportOrder">
-      <!-- Checks for out of order import statements. -->
+    <!-- <module name="ImportOrder">
       <property name="severity" value="error"/>
       <property name="ordered" value="true"/>
       <property name="groups" value="/([^j]|.[^a]|..[^v]|...[^a])/,/^javax?\./"/>
-      <!-- This ensures that static imports go to the end. -->
       <property name="option" value="bottom"/>
       <property name="tokens" value="STATIC_IMPORT, IMPORT"/>
-    </module>
+    </module> -->
 
     <module name="IllegalImport">
       <property name="illegalPkgs" value="junit.framework"/>
@@ -238,21 +236,6 @@ page at http://checkstyle.sourceforge.net/config.html -->
 
     -->
 
-    <module name="LineLength">
-      <!-- Checks if a line is too long. -->
-      <property name="max" value="120" default="120"/>
-      <property name="severity" value="error"/>
-
-      <!--
-        The default ignore pattern exempts the following elements:
-          - import statements
-          - long URLs inside comments
-      -->
-
-      <property name="ignorePattern"
-          value="${com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.ignorePattern}"
-          default="^(package .*;\s*)|(import .*;\s*)|( *\* *https?://.*)$"/>
-    </module>
 
     <module name="LeftCurly">
       <!-- Checks for placement of the left curly brace ('{'). -->

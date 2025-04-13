@@ -21,6 +21,8 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 
 import java.time.DayOfWeek;
+import java.time.format.DateTimeParseException;
+import io.cdap.wrangler.api.RecipeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -143,8 +145,12 @@ public final class DateAndTime {
   /**
    * Return the {@link LocalDateTime} the string represents. If the string is null, this method will return null.
    */
-  public static LocalDateTime GetDateTime(String date) {
-    return LocalDateTime.parse(date, DATE_TIME_FORMAT);
+  public static LocalDateTime GetDateTime(String date) throws RecipeException {
+    try {
+      return LocalDateTime.parse(date, DATE_TIME_FORMAT);
+    } catch (DateTimeParseException e) {
+      throw new RecipeException("Invalid datetime format: " , null, 0, 0);
+    }
   }
 
   /**
